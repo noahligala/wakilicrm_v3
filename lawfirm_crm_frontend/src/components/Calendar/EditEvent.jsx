@@ -1,92 +1,100 @@
 import React, { useEffect, useState } from "react";
-import { Grid, TextField, Box } from "@mui/material";
+import { TextField, Box, Fab, Tooltip, MenuItem, Select } from "@mui/material";
 import { ArrowDropDownIcon } from "@mui/x-date-pickers/icons";
 import Button from "@mui/material/Button/Button";
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import axios from 'axios';
-import List from '@mui/material/List';
-import ListItemButton from '@mui/material/ListItemButton';
-import ListItemText from '@mui/material/ListItemText';
-import MenuItem from '@mui/material/MenuItem';
-import Menu from '@mui/material/Menu';
-import EditEventTimeSlots from "./TimeSlots";
-// import Menu from "@mui/icons-material/Menu";
-// import MenuItem from "@mui/material/MenuItem";
+import EditEventTimeSlotsStart from "./TimeSlotsStart";
+import EditEventTimeSlotsStop from "./TimeSlotsStop";
+import FormControlLabel from '@mui/material/FormControlLabel'
+import Checkbox from '@mui/material/Checkbox';
+import Grid from '@mui/material/Grid';
+import CloseIcon from '@mui/icons-material/Close';
 
-const options = [
-  'Show some love to MUI',
-  'Show all notification content',
-  'Hide sensitive notification content',
-  'Hide all notification content',
-];
 export default function EditEvent({ setTitle, title: initialTitle }) {
   const [title, setTitleState] = useState(initialTitle || "Update Event");
-  const [anchorEl, setAnchorEl] = React.useState(null);
-  const [selectedIndex, setSelectedIndex] = React.useState(1);
-  const open = Boolean(anchorEl);
+  const [anchorEl, setAnchorEl] = useState(null);
+  const [selectedIndex, setSelectedIndex] = useState(1);
+  const [allDay, setAllDay] = useState(false);
+  const [event, setEvent] = useState(null);
+  const [startTime, setStartTime] = useState("");
+  const [stopTime, setStopTime] = useState("");
+  const [categories, setCategories] = useState([]);
+  const [selectedCategory, setSelectedCategory] = useState("");
+  const [location, setLocation] = useState("");
 
-  const handleClickListItem = (event) => {
-    setAnchorEl(event.currentTarget);
-  };
-
-
-  const handleClose = () => {
-    setAnchorEl(null);
-  };
+  const { eventId } = useParams();
 
   useEffect(() => {
-    setTitle(title); // Set the title when the component mounts
+    setTitle(title);
   }, [setTitle, title]);
 
-  const handleMenuClick = (event) => {
-    setAnchorEl(event.currentTarget);
-  };
-
-  const handleCloseMenu = () => {
-    setAnchorEl(null);
-  };
-
-  const handleMenuItemClick = (action) => {
-    // Implement logic for each menu item click
-    console.log("Action clicked:", action);
-    handleCloseMenu();
-  };
-  const { eventId } = useParams();
-  const [event, setEvent] = useState(null);
-
   useEffect(() => {
-    // Fetch event details based on eventId
     const fetchEvent = async () => {
       try {
         const response = await axios.get(`http://localhost:8000/api/events/${eventId}`);
         setEvent(response.data);
+        setStartTime(response.data.startTime);
+        setStopTime(response.data.stopTime);
+        setSelectedCategory(response.data.category); // Set selected category
+        setLocation(response.data.location); // Set location
       } catch (error) {
         console.error('Error fetching event:', error);
       }
     };
 
+    const fetchCategories = async () => {
+      try {
+        const response = await axios.get(`http://localhost:8000/api/categories`);
+        setCategories(response.data);
+      } catch (error) {
+        console.error('Error fetching categories:', error);
+      }
+    };
+
     fetchEvent();
+    fetchCategories();
   }, [eventId]);
 
-  // Handle input change
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setEvent((prevEvent) => ({
-      ...prevEvent,
-      [name]: value,
-    }));
+  const handleStartTimeChange = (time) => {
+    setStartTime(time);
   };
 
-  // Handle event update
+  const handleStopTimeChange = (time) => {
+    setStopTime(time);
+  };
+
+  const handleAllDayChange = (event) => {
+    setAllDay(event.target.checked);
+    if (event.target.checked) {
+      setStartTime("00:00");
+      setStopTime("23:59");
+    } else {
+      setStartTime(event.startTime);
+      setStopTime(event.stopTime);
+    }
+  };
+
+  const handleCategoryChange = (event) => {
+    setSelectedCategory(event.target.value);
+  };
+
+  const handleLocationChange = (event) => {
+    setLocation(event.target.value);
+  };
+
   const handleUpdateEvent = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post(`http://localhost:8000/api/events/${eventId}`, event);
+      const response = await axios.post(`http://localhost:8000/api/events/${eventId}`, {
+        startTime,
+        stopTime,
+        category: selectedCategory,
+        location,
+      });
       if (response.status === 200) {
-        // Handle successful update
         console.log('Event updated successfully');
       } else {
-        // Handle update failure
         console.error('Failed to update event');
       }
     } catch (error) {
@@ -96,83 +104,85 @@ export default function EditEvent({ setTitle, title: initialTitle }) {
 
   return (
     <Grid container>
-           {event && (         
-           <Grid xs spacing={2}>
-             <Grid xs={12} sx={{ display: "flex", flexDirection: "row" }}>
-               <Grid xs={6}>
-                 {/* TextField with dynamic default value */}
-                 <TextField
-              fullWidth
-              label="Add Title"
-              id="standard-size-small"
-              defaultValue={event.title}
-              size="small"
-              variant="standard"
-            />
+      {event && (
+        <Grid container spacing={2}>
+          <Grid item xs={12} sx={{ display: "flex", flexDirection: "row", mt: 4 }}>
+            <Tooltip title='Cancel'>
+              <Link to="/v1/calendar">
+                <Fab disableElevation size="small" aria-label="close" sx={{  boxShadow: 'none', ml:-10 }}>
+                  <CloseIcon />
+                </Fab>
+              </Link>
+            </Tooltip>
+            <Grid item xs={4}>
+              <TextField
+                fullWidth
+                label="Add Title"
+                defaultValue={event.title}
+                size="small"
+                variant="standard"
+              />
+            </Grid>
+            <Grid item xs={6} sx={{ pl: 5, fontSize: "2rem" }}>
+              <Button
+                variant="contained"
+                disableElevation
+                sx={{ m: 2, textTransform: "none", fontSize: "1rem" }}
+                onClick={handleUpdateEvent}
+              >
+                Save
+              </Button>
+              <Button
+                color="inherit"
+                variant="contained"
+                disableElevation
+                aria-controls="more-actions-menu"
+                aria-haspopup="true"
+                sx={{ m: 2, textTransform: "none", fontSize: "1rem" }}
+                endIcon={<ArrowDropDownIcon />}
+              >
+                More Actions
+              </Button>
+            </Grid>
           </Grid>
-          <Grid xs={6} sx={{ pl: 5, fontSize: "2rem" }}>
-            <Button
-              variant="contained"
-              disableElevation
-              sx={{ m: 2, textTransform: "none", fontSize: "1rem" }}
-              onClick={handleUpdateEvent}
-            >
-              Save
-            </Button>
-            {/* More Actions Button with Dropdown */}
-            <Button
-              color="inherit"
-              variant="contained"
-              disableElevation
-              aria-controls="more-actions-menu"
-              aria-haspopup="true"
-              onClick={handleMenuClick}
-              sx={{ m: 2, textTransform: "none", fontSize: "1rem" }}
-              endIcon={<ArrowDropDownIcon />}
-          >
-              More Actions
-          </Button>
-          {/* <Menu
-              id="more-actions-menu"
-              anchorEl={anchorEl}
-              open={Boolean(anchorEl)}
-              onClose={handleCloseMenu}
-              anchorOrigin={{
-                  vertical: 'bottom',
-                  horizontal: 'right',
-              }}
-              transformOrigin={{
-                  vertical: 'top',
-                  horizontal: 'right',
-              }}
-          >
-              <MenuItem onClick={() => handleMenuItemClick("print")}>Print</MenuItem>
-              <MenuItem onClick={() => handleMenuItemClick("delete")}>Delete</MenuItem>
-              <MenuItem onClick={() => handleMenuItemClick("duplicate")}>Duplicate</MenuItem>
-              <MenuItem onClick={() => handleMenuItemClick("publish event")}>Publish Event</MenuItem>
-              <MenuItem onClick={() => handleMenuItemClick("change owner")}>Change Owner</MenuItem>
-          </Menu> */}
-          </Grid>
-        </Grid>
-        <Grid sx={{ display: "flex", flexGrow: 1, mt: 2 }}>
-          <Grid xs={6} sx={{display:'flex', flexDirection:'row'}}>
-            <Box id="time-stma" sm={6}>
-              {/* Inputs */}
-                  <EditEventTimeSlots />
-              input
+          <Grid item xs={6} sx={{ display: 'flex', flexDirection: 'row' }}>
+            <Box sx={{ pr: 2 }}>
+              <EditEventTimeSlotsStart defaultTime={startTime } onChange={handleStartTimeChange} />
             </Box>
-            <Box sm={6}>
-              {/* Inputs */}
-                
+            <Box sx={{ pr: 2 }}>
+              <EditEventTimeSlotsStop defaultTime={stopTime} onChange={handleStopTimeChange} />
             </Box>
           </Grid>
-          <Grid xs={6}>
+          <Grid item xs={6}>
             Second Grid
           </Grid>
+          <Grid item xs={12} sx={{flexDirection:'row'}}>
+            <Box xs={4}>
+              <FormControlLabel
+                control={<Checkbox checked={allDay} onChange={handleAllDayChange} />}
+                label="All Day"
+              />
+            </Box>
+            <Grid xs={4} sx={{mt:5}}>
+                  {/* Category Color */}
+                <TextField
+                  size="small"
+                  label="category"
+                  defaultValue={selectedCategory} />
+                </Grid>
+            {/* Location Input */}
+            <Grid xs={4} sx={{mt:5}}>
+            <TextField
+              label="Location"
+              value={location}
+              variant="outlined"
+              size="small"
+              onChange={handleLocationChange}
+            />
+            </Grid>
+          </Grid>
         </Grid>
-      </Grid>
-           )}
+      )}
     </Grid>
   );
 }
-

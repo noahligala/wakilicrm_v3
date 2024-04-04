@@ -268,9 +268,9 @@ const onSelectEvent = useCallback((event) => {
         <MenuItem onClick={() => handleCategoryChange("Bloked")} style={{ backgroundColor: '#607D8B', marginBottom:2,borderRadius: 10,fontSize: "0.6rem", textAlign: "center" }}>Blocked-Out</MenuItem>
         {/* Add more menu items for different categories */}
         <Box sx={{textAlign:'center', mt:8}}>
-          <Fab size="small" color="primary" aria-label="add" >
-            <AddIcon sx={{}}/>
-          </Fab>
+        <Fab size="small" color="primary" aria-label="add" onClick={handleFabClick}>
+          <AddIcon />
+        </Fab>
         </Box>
       </MenuList>
 
@@ -287,12 +287,7 @@ const onSelectEvent = useCallback((event) => {
         />
       </div>
 
-      {/* Floating Action Button */}
-      <Box sx={{textAlign:'center', mt:8, position: 'fixed', bottom: '16px', right: '16px'}}>
-        <Fab size="small" color="primary" aria-label="add" onClick={handleFabClick}>
-          <AddIcon />
-        </Fab>
-      </Box>
+
 
       {/* Add Event Dialog */}
       <Dialog open={openAddEventDialog} onClose={handleAddEventDialogClose}>
