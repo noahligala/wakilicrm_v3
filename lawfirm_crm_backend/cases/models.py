@@ -28,7 +28,9 @@ class Case(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     approved = models.BooleanField(default=False)
-    file = models.ForeignKey('File', on_delete=models.CASCADE, related_name='cases')
+    is_task = models.BooleanField(default=False)
+    is_done = models.BooleanField(default=False)  
+    file = models.ForeignKey('File', on_delete=models.CASCADE, related_name='related_cases')
     landed_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='landed_cases')
 
     def save(self, *args, **kwargs):
@@ -89,13 +91,13 @@ class StaffReport(models.Model):
 
 class File(models.Model):
     name = models.CharField(max_length=255, unique=True)
-    created_at = models.DateTimeField(auto_now_add=True)
+    client = models.ForeignKey(Client, on_delete=models.CASCADE, related_name='files')
+    cases = models.ManyToManyField(Case, related_name='related_files')
 
     def save(self, *args, **kwargs):
         if not self.id:
             # This is a new file, so we need to generate a name
-            client_file_management = ClientFileManagement.load()
-            client_name = client_file_management.client_name
+            client_name = self.client.name
             current_year = timezone.now().year
 
             # Get the count of files for this client and year
@@ -106,22 +108,16 @@ class File(models.Model):
 
         super().save(*args, **kwargs)
 
+    def __str__(self):
+        return self.name
+
 
 class ClientFileManagement(models.Model):
-    client_name = models.CharField(max_length=255)
-    files = models.ManyToManyField(File, related_name='client_file_managements')
+    client = models.OneToOneField(Client, on_delete=models.CASCADE, related_name='client_file')
+    main_file = models.OneToOneField(File, on_delete=models.CASCADE, related_name='main_client_file')
 
-    def save(self, *args, **kwargs):
-        self.pk = 1
-        super(ClientFileManagement, self).save(*args, **kwargs)
-
-    def delete(self, *args, **kwargs):
-        pass
-
-    @classmethod
-    def load(cls):
-        obj, created = cls.objects.get_or_create(pk=1)
-        return obj
+    def __str__(self):
+        return f"{self.client.name}'s Client File"
 
 
 class EventType(models.Model):

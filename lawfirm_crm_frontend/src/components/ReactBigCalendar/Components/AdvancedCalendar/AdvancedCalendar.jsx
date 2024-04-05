@@ -18,6 +18,11 @@ import MailOutlineIcon from '@mui/icons-material/MailOutline';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import CloseIcon from '@mui/icons-material/Close';
 import { Link } from "react-router-dom";
+import TextField from '@mui/material/TextField'
+import Button from '@mui/material/Button';
+import Select from '@mui/material/Select'
+import FormControlLabel from '@mui/material/FormControlLabel'
+import Checkbox from '@mui/material/Checkbox'
 
 const DnDCalendar = withDragAndDrop(Calendar);
 
@@ -250,6 +255,18 @@ const onSelectEvent = useCallback((event) => {
   };
 
 
+  const CATEGORY_CHOICES = [
+    ('Appointment'),
+    ('Court Date'),
+    ('Hearing'),
+    ('Mention'),
+    ('Ruling'),
+    ('Judgement'),
+    ('CRM Bring Up'),
+    ('Event'),
+  ];
+  
+
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'stretch' }}>
@@ -291,14 +308,58 @@ const onSelectEvent = useCallback((event) => {
 
       {/* Add Event Dialog */}
       <Dialog open={openAddEventDialog} onClose={handleAddEventDialogClose}>
-        <DialogContent>
-          <Typography variant="h7">Add New Event</Typography>
-          <form onSubmit={handleAddEvent}>
-            <label>Title:</label>
-            <input type="text" name="title" value={newEvent.title} onChange={handleNewEventChange} />
-            {/* Other input fields for event details */}
-            <button type="submit">Add Event</button>
-          </form>
+        <DialogContent sx={{ pl: 8, pr: 3, pb: 5, color: '#424242', width: "30rem", fontFamily: 'sans-serif', display: 'flex-column' }}>
+        <MenuList sx={{mt:-2, textAlign:'right', mb:-5}}>
+            <Tooltip title='close'><Fab disableElevation onClick={handleAddEventDialogClose} size="small" aria-label="close"  sx={{mr:-1, boxShadow:'none'}}><CloseIcon /></Fab></Tooltip>
+        </MenuList>
+          <Typography variant="h6" size="small" sx={{ mb: 2 }}>Add New Event</Typography>
+          {/* title */}
+          <TextField
+            sx={{ width: '90%' }}
+            size="small"
+            variant="outlined"
+            label="Title"
+          />
+          {/* Location */}
+          <TextField
+            sx={{ width: '43%', mt: 2, mr:2 }}
+            size="small"
+            variant="outlined"
+            label="Location"
+          />
+          {/* Category */}
+          <Select
+            sx={{ width: '43%', mt: 2 }}
+            label="Category"
+            size="small"
+            defaultValue='category'
+          >
+            {CATEGORY_CHOICES.map((label) => (
+              <MenuItem key={label} value={label}>{label}</MenuItem>
+            ))}
+          </Select>
+          {/* Resource/Assigned */}
+          <TextField
+            size="small"
+            label="Assigned to:"
+            sx={{mt:2}}
+             />
+          <FormControlLabel
+            sx={{ mt: 2 , ml:5}}
+            disabled
+            control={<Checkbox  />}
+            label="Approved"
+            />
+            <Box>
+                <TextField
+                multiline
+                label="Description"
+                size="small"
+                sx={{width:'90%', mt:2}} />
+            </Box>
+          <Box sx={{ mt: 2 }}>
+            <Button onClick={handleAddEvent} disableElevation variant="contained" size="small" sx={{ textTransform: 'none' }}> Save</Button>
+          </Box>
         </DialogContent>
       </Dialog>
 
