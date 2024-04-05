@@ -11,7 +11,6 @@ class ClientSerializer(serializers.ModelSerializer):
 
 
 class CaseSerializer(serializers.ModelSerializer):
-    client_name = serializers.CharField(write_only=True) 
     client_name = serializers.CharField(write_only=True)
 
     class Meta:
@@ -20,14 +19,13 @@ class CaseSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         client_name = validated_data.pop('client_name')
-        client, created = Client.objects.get_or_create(name=client_name)
-        validated_data.pop('client', None)
+        client = Client.objects.get_or_create(name=client_name)
 
         # Get or create the ClientFileManagement instance
         client_file_management = ClientFileManagement.load()
 
         # Get the latest file associated with the client
-        latest_file = client_file_management.files.last()
+        latest_file = client_file_management.main_file
 
         if latest_file is None:
             # If no file exists, create a new one
@@ -36,15 +34,26 @@ class CaseSerializer(serializers.ModelSerializer):
             file_name = f"{client_name}/{current_year}/{file_count:03d}"
             latest_file = File.objects.create(name=file_name)
 
-        # Associate the client with the latest file
-        client_file_management.files.add(latest_file)
+            # Associate the latest file with the client
+            latest_file.client = client
+            latest_file.save()
+
+            # Associate the latest file with the ClientFileManagement instance
+            client_file_management.main_file = latest_file
+            client_file_management.save()
 
         # Assign the latest file to the validated data
         validated_data['file'] = latest_file
 
-        # Create the case instance
-        case = Case.objects.create(client=client, **validated_data)
+        # # Remove client_name from validated_data
+        # validated_data.pop('client_name')
+
+        # Create the case instance without passing client argument
+        case = Case.objects.create(**validated_data)
         return case
+
+
+
 
 class LawyerSerializer(serializers.ModelSerializer):
     class Meta:

@@ -346,9 +346,8 @@ const onSelectEvent = useCallback((event) => {
              />
           <FormControlLabel
             sx={{ mt: 2 , ml:5}}
-            disabled
             control={<Checkbox  />}
-            label="Approved"
+            label="Task"
             />
             <Box>
                 <TextField

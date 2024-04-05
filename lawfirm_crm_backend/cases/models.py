@@ -1,6 +1,23 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
+import os
+from django.core.files.storage import FileSystemStorage
+from django.conf import settings
+
+
+from django.db import models
+from django.contrib.auth.models import User
+from django.utils import timezone
+import os
+from django.core.files.storage import FileSystemStorage
+from django.conf import settings
+
+def case_document_path(instance, filename):
+    # Upload documents to a directory with the client's name
+    client_name = instance.client.name
+    current_year = timezone.now().year
+    return f'case_documents/{client_name}/{current_year}/{filename}'
 
 
 class Case(models.Model):
@@ -21,25 +38,33 @@ class Case(models.Model):
     opponent_client = models.CharField(max_length=100)
     opposing_counsel = models.CharField(max_length=100, blank=True, null=True)
     status = models.CharField(max_length=50, choices=STATUS_CHOICES, default='Filing')
-    documents = models.FileField(upload_to='case_documents/', blank=True, null=True)
+    documents = models.FileField(upload_to=case_document_path, blank=True, null=True)
     assigned_to = models.ForeignKey(User, on_delete=models.CASCADE, related_name='created_cases')
     updated_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='updated_cases')
     court = models.CharField(max_length=100)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    approved = models.BooleanField(default=False)
-    is_task = models.BooleanField(default=False)
-    is_done = models.BooleanField(default=False)  
+    approved = models.BooleanField(default=False) 
     file = models.ForeignKey('File', on_delete=models.CASCADE, related_name='related_cases')
     landed_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='landed_cases')
 
     def save(self, *args, **kwargs):
         if not self.pk:  # Only set created_at if the instance is being created
             self.created_at = timezone.now()
+
+            # If client file management exists, save documents within its directory
+            try:
+                client_file_management = ClientFileManagement.objects.get(client=self.client)
+                self.documents.storage = client_file_management.main_file.storage
+            except ClientFileManagement.DoesNotExist:
+                pass
+
         super().save(*args, **kwargs)
 
     def __str__(self):
         return self.title
+
+
 
 
 class Client(models.Model):
@@ -89,10 +114,46 @@ class StaffReport(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
 
+
+
+class CustomFileSystemStorage(FileSystemStorage):
+    def __init__(self, *args, **kwargs):
+        kwargs['location'] = '../Assets/CFM/'
+        super().__init__(*args, **kwargs)
+    
+    
+    def get_available_name(self, name, max_length=None):
+        """
+        Overrides parent method to prevent overwriting existing files.
+        """
+        if self.exists(name):
+            # Split the filename and extension
+            root, ext = os.path.splitext(name)
+            counter = 1
+            # Append suffix until the filename is unique
+            while self.exists(f"{root}_{counter}{ext}"):
+                counter += 1
+            name = f"{root}_{counter}{ext}"
+        return name
+    
+
+    def save(self, name, content, max_length=None):
+        """
+        Overrides parent method to create directories if they don't exist.
+        """
+        directory = os.path.dirname(name)
+        # Create the directory if it doesn't exist
+        if not os.path.exists(os.path.join(settings.MEDIA_ROOT, directory)):
+            os.makedirs(os.path.join(settings.MEDIA_ROOT, directory))
+        return super().save(name, content, max_length)
+     
+# Create an instance of your custom storage
+custom_storage = CustomFileSystemStorage()
 class File(models.Model):
     name = models.CharField(max_length=255, unique=True)
     client = models.ForeignKey(Client, on_delete=models.CASCADE, related_name='files')
     cases = models.ManyToManyField(Case, related_name='related_files')
+    documents = models.FileField(upload_to='case_documents/', storage=custom_storage, blank=True, null=True)
 
     def save(self, *args, **kwargs):
         if not self.id:
@@ -111,13 +172,22 @@ class File(models.Model):
     def __str__(self):
         return self.name
 
-
 class ClientFileManagement(models.Model):
     client = models.OneToOneField(Client, on_delete=models.CASCADE, related_name='client_file')
     main_file = models.OneToOneField(File, on_delete=models.CASCADE, related_name='main_client_file')
 
+    @classmethod
+    def load(cls):
+        obj, created = cls.objects.get_or_create()
+        return obj
+
+    @property
+    def files(self):
+        return self.main_file.cases.all()
+
     def __str__(self):
         return f"{self.client.name}'s Client File"
+
 
 
 class EventType(models.Model):
@@ -148,6 +218,8 @@ class Event(models.Model):
     resource = models.CharField(max_length=100)
     address = models.TextField()
     is_draggable = models.BooleanField(default=True)
+    is_task = models.BooleanField(default=False)
+    is_done = models.BooleanField(default=False) 
     category = models.CharField(max_length=20, choices=CATEGORY_CHOICES)
 
     def __str__(self):
