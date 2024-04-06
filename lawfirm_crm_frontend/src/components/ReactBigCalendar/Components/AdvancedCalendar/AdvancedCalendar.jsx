@@ -23,6 +23,8 @@ import Button from '@mui/material/Button';
 import Select from '@mui/material/Select'
 import FormControlLabel from '@mui/material/FormControlLabel'
 import Checkbox from '@mui/material/Checkbox'
+import Autocomplete from '@mui/material/Autocomplete';
+
 
 const DnDCalendar = withDragAndDrop(Calendar);
 
@@ -265,6 +267,59 @@ const onSelectEvent = useCallback((event) => {
     ('CRM Bring Up'),
     ('Event'),
   ];
+
+  // Define the mattersOptions array
+  const [mattersOptions, setMattersOptions] = useState([]);
+
+  // Fetch matters from the backend when the component mounts
+  useEffect(() => {
+    const fetchMatters = async () => {
+      try {
+        const response = await axios.get('http://localhost:8000/api/cases');
+        if (response.status === 200) {
+          // Assuming the response data is an array of matters with id and title properties
+          setMattersOptions(response.data);
+        }
+      } catch (error) {
+        console.error('Error fetching matters:', error);
+      }
+    };
+
+    fetchMatters();
+
+    return () => {
+      // Cleanup if needed
+    };
+  }, []);
+
+  const [selectedMatter, setSelectedMatter] = useState(null);
+  const [inputValue, setInputValue] = useState('');
+
+  // Define a function to handle changes in the input value of the matters text field
+  const handleMattersInputChange = (event) => {
+    setInputValue(event.target.value);
+  };
+
+  // Define a function to filter matters based on the input value
+  const filterMattersOptions = () => {
+    return mattersOptions.filter((matter) =>
+      matter.title.toLowerCase().includes(inputValue.toLowerCase())
+    );
+  };
+
+  // Define a function to handle the selection of a matter from the autocomplete options
+  const handleMatterSelect = (matter) => {
+    setSelectedMatter(matter);
+    setInputValue(matter.title); // Update the input value with the selected matter's title
+  };
+
+  // Define a function to clear the selected matter
+  const clearSelectedMatter = () => {
+    setSelectedMatter(null);
+    setInputValue(''); // Clear the input value
+  };
+
+
   
 
 
@@ -338,6 +393,22 @@ const onSelectEvent = useCallback((event) => {
               <MenuItem key={label} value={label}>{label}</MenuItem>
             ))}
           </Select>
+          {/* Matter */}
+          {/* Matter */}
+        <Autocomplete
+          sx={{ width: '90%', mt: 2 }}
+          options={mattersOptions}
+          getOptionLabel={(option) => option.title} // Assuming the title property holds the case title
+          renderInput={(params) => <TextField {...params} label="Matter" variant="outlined" />}
+          onChange={(event, newValue) => {
+            if (newValue) {
+              setNewEvent((prevState) => ({
+                ...prevState,
+                matter: newValue.id // Assuming the id property holds the case ID
+              }));
+            }
+          }}
+        />
           {/* Resource/Assigned */}
           <TextField
             size="small"

@@ -13,12 +13,43 @@ import os
 from django.core.files.storage import FileSystemStorage
 from django.conf import settings
 
+
+### Case Management
 def case_document_path(instance, filename):
     # Upload documents to a directory with the client's name
     client_name = instance.client.name
     current_year = timezone.now().year
     return f'case_documents/{client_name}/{current_year}/{filename}'
 
+
+class CaseVersion(models.Model):
+    case = models.ForeignKey('Case', on_delete=models.CASCADE, related_name='versions')
+    title = models.CharField(max_length=200)
+    description = models.TextField()
+    client = models.ForeignKey('Client', on_delete=models.CASCADE)
+    opponent_client = models.CharField(max_length=100)
+    opposing_counsel = models.CharField(max_length=100, blank=True, null=True)
+    status = models.CharField(max_length=50)
+    documents = models.FileField(upload_to='case_documents/', blank=True, null=True)
+    assigned_to = models.ForeignKey(User, on_delete=models.CASCADE, related_name='assigned_case_versions')
+    updated_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='updated_case_versions', blank=True, null=True)
+    court = models.CharField(max_length=100)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def save(self, *args, **kwargs):
+        # Set the updated_by field to the current logged-in user
+        request = kwargs.pop('request', None)
+        if request:
+            self.updated_by = request.user
+
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"Version ID: {self.id}, Case: {self.case}, Updated by: {self.updated_by}, Updated at: {self.updated_at}"
+
+    class Meta:
+        ordering = ['-updated_at']
 
 class Case(models.Model):
     class Meta:
@@ -38,10 +69,10 @@ class Case(models.Model):
     opponent_client = models.CharField(max_length=100)
     opposing_counsel = models.CharField(max_length=100, blank=True, null=True)
     status = models.CharField(max_length=50, choices=STATUS_CHOICES, default='Filing')
-    documents = models.FileField(upload_to=case_document_path, blank=True, null=True)
+    documents = models.FileField(upload_to='case_documents/', blank=True, null=True)
     assigned_to = models.ForeignKey(User, on_delete=models.CASCADE, related_name='created_cases')
-    updated_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='updated_cases')
-    court = models.CharField(max_length=100)
+    updated_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='updated_cases', blank=True, null=True)
+    court = models.CharField(max_length=100, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     approved = models.BooleanField(default=False) 
@@ -59,6 +90,11 @@ class Case(models.Model):
             except ClientFileManagement.DoesNotExist:
                 pass
 
+        # Set the updated_by field to the current logged-in user
+        request = kwargs.pop('request', None)
+        if request:
+            self.updated_by = request.user
+
         super().save(*args, **kwargs)
 
     def __str__(self):
@@ -66,7 +102,7 @@ class Case(models.Model):
 
 
 
-
+### Personnel Managment
 class Client(models.Model):
     name = models.CharField(max_length=100)
     contact_information = models.CharField(max_length=200)
@@ -115,7 +151,7 @@ class StaffReport(models.Model):
 
 
 
-
+### File Management
 class CustomFileSystemStorage(FileSystemStorage):
     def __init__(self, *args, **kwargs):
         kwargs['location'] = '../Assets/CFM/'
@@ -190,6 +226,7 @@ class ClientFileManagement(models.Model):
 
 
 
+### Event Models
 class EventType(models.Model):
     name = models.CharField(max_length=200)
 
@@ -211,7 +248,7 @@ class Event(models.Model):
 
     start = models.DateTimeField()
     end = models.DateTimeField()
-    title = models.CharField(max_length=200)  # Add the title field
+    title = models.CharField(max_length=200)
     appointment_id = models.IntegerField()
     appointment_status = models.CharField(max_length=2)
     location = models.CharField(max_length=100)
@@ -221,6 +258,9 @@ class Event(models.Model):
     is_task = models.BooleanField(default=False)
     is_done = models.BooleanField(default=False) 
     category = models.CharField(max_length=20, choices=CATEGORY_CHOICES)
+    case = models.ForeignKey(Case, on_delete=models.CASCADE, related_name='events', blank=True, null=True)
+    client = models.ForeignKey(Client, on_delete=models.CASCADE, related_name='events', blank=True, null=True)
 
     def __str__(self):
         return f"Event ID: {self.id}, Title: {self.title}, Start: {self.start}, End: {self.end}"
+

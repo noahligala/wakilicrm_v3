@@ -22,7 +22,7 @@ export default function Calendar({ setTitle }) {
 
   return (
     <React.Fragment>
-     <Box sx={{flexGrow: 1, ml: -9,mt:4, flexDirection: "row"}}>
+     <Box sx={{flexGrow: 1, ml: -5,mt:4, flexDirection: "row"}}>
         <Grid container spacing={3}>
             <Grid xs={10}>
                 <Grid item xs={10} sx={{ height: ''}}>

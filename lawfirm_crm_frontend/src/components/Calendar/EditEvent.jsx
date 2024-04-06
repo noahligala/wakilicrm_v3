@@ -1,15 +1,58 @@
 import React, { useEffect, useState } from "react";
-import { TextField, Box, Fab, Tooltip, MenuItem, Select } from "@mui/material";
+import { TextField, Box, Fab, MenuItem, Select } from "@mui/material";
 import { ArrowDropDownIcon } from "@mui/x-date-pickers/icons";
 import Button from "@mui/material/Button/Button";
 import { useParams, Link } from 'react-router-dom';
 import axios from 'axios';
-import EditEventTimeSlotsStart from "./TimeSlotsStart";
-import EditEventTimeSlotsStop from "./TimeSlotsStop";
 import FormControlLabel from '@mui/material/FormControlLabel'
 import Checkbox from '@mui/material/Checkbox';
 import Grid from '@mui/material/Grid';
 import CloseIcon from '@mui/icons-material/Close';
+import { styled } from '@mui/material/styles';
+import Tooltip from '@mui/material/Tooltip';
+import Stack from '@mui/material/Stack';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { TimePicker } from '@mui/x-date-pickers/TimePicker';
+
+const ProSpan = styled('span')({
+  display: 'inline-block',
+  height: '1em',
+  width: '1em',
+  verticalAlign: 'middle',
+  marginLeft: '0.3em',
+  marginBottom: '0.08em',
+  backgroundSize: 'contain',
+  backgroundRepeat: 'no-repeat',
+  backgroundImage: 'url(https://mui.com/static/x/pro.svg)',
+});
+
+function Label({ componentName, valueType, isProOnly }) {
+  const content = (
+    <span>
+      <strong>{componentName}</strong> for {valueType} editing
+    </span>
+  );
+
+  if (isProOnly) {
+    return (
+      <Stack direction="row" spacing={0.5} component="span">
+        <Tooltip title="Included on Pro package">
+          <a
+            href="https://mui.com/x/introduction/licensing/#pro-plan"
+            aria-label="Included on Pro package"
+          >
+            <ProSpan />
+          </a>
+        </Tooltip>
+        {content}
+      </Stack>
+    );
+  }
+
+  return content;
+}
 
 export default function EditEvent({ setTitle, title: initialTitle }) {
   const [title, setTitleState] = useState(initialTitle || "Update Event");
@@ -58,6 +101,10 @@ export default function EditEvent({ setTitle, title: initialTitle }) {
 
   const handleStartTimeChange = (time) => {
     setStartTime(time);
+    // Update the stop time if it's after the new start time
+    if (stopTime < time) {
+      setStopTime(time);
+    }
   };
 
   const handleStopTimeChange = (time) => {
@@ -146,12 +193,41 @@ export default function EditEvent({ setTitle, title: initialTitle }) {
             </Grid>
           </Grid>
           <Grid item xs={6} sx={{ display: 'flex', flexDirection: 'row' }}>
+
+          {/* Test Date and Time Pickers */}
+          <LocalizationProvider dateAdapter={AdapterDayjs}>
             <Box sx={{ pr: 2 }}>
-              <EditEventTimeSlotsStart defaultTime={startTime } onChange={handleStartTimeChange} />
+              {/* Set default value for start time */}
+              <TimePicker
+                label="Start"
+                defaultValue={startTime}
+                onChange={handleStartTimeChange}
+                slotProps={{ textField: { size: 'small'}, value:{fontSize:'0.05rem'}}}
+                sx={{width: '35%', mr:2}} />
+              <DatePicker
+                label="Start Date"
+                defaultValue={event.startDate}
+                onChange={(date) => handleStartTimeChange(date.set('hour', startTime.hour()).set('minute', startTime.minute()))}
+                formatDensity="dense" 
+                slotProps={{ textField: { size: 'small' } }}
+                sx={{width: '55%'}}  />
             </Box>
             <Box sx={{ pr: 2 }}>
-              <EditEventTimeSlotsStop defaultTime={stopTime} onChange={handleStopTimeChange} />
+              {/* Set default value for stop time */}
+              <TimePicker
+                label="End"
+                defaultValue={stopTime}
+                onChange={handleStopTimeChange}
+                slotProps={{ textField: { size: 'small' } }}
+                sx={{width: '30%', mr:2}} />
+              <DatePicker
+                label="End Date"
+                defaultValue={event.endDate}
+                onChange={(date) => handleStopTimeChange(date.set('hour', stopTime.hour()).set('minute', stopTime.minute()))}
+                slotProps={{ textField: { size: 'small' } }}
+                sx={{width: '60%'}}  />
             </Box>
+        </LocalizationProvider>
           </Grid>
           <Grid item xs={6}>
             Second Grid
@@ -184,5 +260,6 @@ export default function EditEvent({ setTitle, title: initialTitle }) {
         </Grid>
       )}
     </Grid>
+
   );
 }
