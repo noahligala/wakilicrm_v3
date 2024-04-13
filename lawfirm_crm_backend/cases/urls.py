@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import CaseListCreateAPIView, CaseRetrieveUpdateDestroyAPIView, ClientListCreateAPIView, ClientRetrieveUpdateDestroyAPIView, LawyerListCreateAPIView, LawyerRetrieveUpdateDestroyAPIView, UserUpdateView, TokenVerifyView, BulkImportView, EventListView, EventCreateView, EventUpdateView
+from .views import CaseListCreateAPIView, CaseRetrieveUpdateDestroyAPIView, ClientListCreateAPIView, ClientRetrieveUpdateDestroyAPIView, LawyerListCreateAPIView, LawyerRetrieveUpdateDestroyAPIView, UserUpdateView, TokenVerifyView, BulkImportView, EventListView, EventCreateView, EventUpdateView, CurrentUserView
 
 urlpatterns = [
     path('cases/', CaseListCreateAPIView.as_view(), name='case-list-create'),
@@ -13,5 +13,6 @@ urlpatterns = [
     path('user/<int:pk>/', UserUpdateView.as_view(), name='user-update'),
     path('token/verify/', TokenVerifyView.as_view(), name='token_verify'),
     path('bulk_import/', BulkImportView.as_view(), name='bulk_import'),
+    path('current-user/', CurrentUserView.as_view(), name='current-user'),
     path('events/<int:event_id>/', EventUpdateView.as_view(), name='events_update' ),   
 ]

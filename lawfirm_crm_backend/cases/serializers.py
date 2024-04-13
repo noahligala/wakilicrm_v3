@@ -2,6 +2,8 @@ from rest_framework import serializers
 from .models import Case, Client, Lawyer, StaffReport, File, ClientFileManagement, Event
 from django.contrib.auth.models import User
 from django.utils import timezone
+from django.contrib.auth.models import User
+from django.views.decorators.csrf import csrf_exempt
 
 class ClientSerializer(serializers.ModelSerializer):
     file = serializers.CharField(read_only=True, required=False) 
@@ -63,7 +65,8 @@ class StaffReportSerializer(serializers.ModelSerializer):
     class Meta:
         model = StaffReport
         fields = '__all__'
-    
+        
+@csrf_exempt  
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
@@ -85,3 +88,9 @@ class EventSerializer(serializers.ModelSerializer):
     class Meta:
         model = Event
         fields = ['id', 'title', 'start', 'end', 'appointment_id', 'appointment_status', 'location', 'resource', 'address', 'is_draggable', 'category']
+
+
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id', 'username', 'email', 'first_name', 'last_name']  # Include any other fields you need

@@ -42,9 +42,13 @@ export default function AdvancedCalendar({ draggableAccessor, resizable, ...othe
     resource: '',
     location: ''
   });
+  
+
+  const [currentUser, setCurrentUser] = useState(null); // State to store current user
 
   useEffect(() => {
-    fetchEvents();
+    fetchEvents();// Fetch current user when component mounts
+    fetchCurrentUser(); // Fetch current user when component mounts
     const intervalId = setInterval(fetchEvents, 60000);
     return () => clearInterval(intervalId);
   }, []);
@@ -67,6 +71,17 @@ export default function AdvancedCalendar({ draggableAccessor, resizable, ...othe
       console.error('Error fetching events:', error);
     }
   };
+
+  //get token from LocalStorag
+    // Function to fetch current user from localStorage
+    const fetchCurrentUser = () => {
+      const userString = localStorage.getItem('user');
+      if (userString) {
+        const userData = JSON.parse(userString);
+        setCurrentUser(userData);
+      }
+    };
+
 
   const handleCategoryChange = useCallback((category) => {
     setSelectedCategory(category);
@@ -230,7 +245,7 @@ const onSelectEvent = useCallback((event) => {
 
   const handleAddEvent = async () => {
     try {
-      const response = await axios.post('http://localhost:8000/api/events', newEvent);
+      const response = await axios.post('http://localhost:8000/api/events/create/', newEvent);
       if (response.status === 201) {
         setEvents([...events, response.data]);
         setOpenAddEventDialog(false);
@@ -256,6 +271,9 @@ const onSelectEvent = useCallback((event) => {
     }));
   };
 
+    // Fetch user object from localStorage
+  
+
 
   const CATEGORY_CHOICES = [
     ('Appointment'),
@@ -266,6 +284,7 @@ const onSelectEvent = useCallback((event) => {
     ('Judgement'),
     ('CRM Bring Up'),
     ('Event'),
+    ('Block Out'),
   ];
 
   // Define the mattersOptions array
@@ -318,10 +337,7 @@ const onSelectEvent = useCallback((event) => {
     setSelectedMatter(null);
     setInputValue(''); // Clear the input value
   };
-
-
-  
-
+ 
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'stretch' }}>
@@ -361,77 +377,126 @@ const onSelectEvent = useCallback((event) => {
 
 
 
-      {/* Add Event Dialog */}
-      <Dialog open={openAddEventDialog} onClose={handleAddEventDialogClose}>
-        <DialogContent sx={{ pl: 8, pr: 3, pb: 5, color: '#424242', width: "30rem", fontFamily: 'sans-serif', display: 'flex-column' }}>
-        <MenuList sx={{mt:-2, textAlign:'right', mb:-5}}>
-            <Tooltip title='close'><Fab disableElevation onClick={handleAddEventDialogClose} size="small" aria-label="close"  sx={{mr:-1, boxShadow:'none'}}><CloseIcon /></Fab></Tooltip>
-        </MenuList>
-          <Typography variant="h6" size="small" sx={{ mb: 2 }}>Add New Event</Typography>
-          {/* title */}
-          <TextField
-            sx={{ width: '90%' }}
-            size="small"
-            variant="outlined"
-            label="Title"
-          />
-          {/* Location */}
-          <TextField
-            sx={{ width: '43%', mt: 2, mr:2 }}
-            size="small"
-            variant="outlined"
-            label="Location"
-          />
-          {/* Category */}
-          <Select
-            sx={{ width: '43%', mt: 2 }}
-            label="Category"
-            size="small"
-            defaultValue='category'
-          >
-            {CATEGORY_CHOICES.map((label) => (
-              <MenuItem key={label} value={label}>{label}</MenuItem>
-            ))}
-          </Select>
-          {/* Matter */}
-          {/* Matter */}
-        <Autocomplete
-          sx={{ width: '90%', mt: 2 }}
-          options={mattersOptions}
-          getOptionLabel={(option) => option.title} // Assuming the title property holds the case title
-          renderInput={(params) => <TextField {...params} label="Matter" variant="outlined" />}
-          onChange={(event, newValue) => {
-            if (newValue) {
-              setNewEvent((prevState) => ({
-                ...prevState,
-                matter: newValue.id // Assuming the id property holds the case ID
-              }));
-            }
-          }}
-        />
-          {/* Resource/Assigned */}
-          <TextField
-            size="small"
-            label="Assigned to:"
-            sx={{mt:2}}
-             />
-          <FormControlLabel
-            sx={{ mt: 2 , ml:5}}
-            control={<Checkbox  />}
-            label="Task"
+        {/* Add Event Dialog */}
+        <Dialog open={openAddEventDialog} onClose={handleAddEventDialogClose}>
+          <DialogContent sx={{ pl: 8, pr: 3, pb: 5, color: '#424242', width: "35rem", fontFamily: 'sans-serif', display: 'flex-column' }}>
+            <MenuList sx={{ mt: -2, textAlign: 'right', mb: -5 }}>
+              <Tooltip title='close'><Fab disableElevation onClick={handleAddEventDialogClose} size="small" aria-label="close" sx={{ mr: -1, boxShadow: 'none' }}><CloseIcon /></Fab></Tooltip>
+            </MenuList>
+            <Typography variant="h6" size="small" sx={{ mb: 2 }}>Add New Event</Typography>
+            {/* Title */}
+            <TextField
+              sx={{ width: '90%' }}
+              size="small"
+              variant="outlined"
+              label="Title"
             />
-            <Box>
-                <TextField
-                multiline
-                label="Description"
+            {/* Location */}
+            <TextField
+              sx={{ width: '43.5%', mt: 2, mr: 2 }}
+              size="small"
+              variant="outlined"
+              label="Location"
+            />
+            {/* Category */}
+            <Tooltip title="Category">
+              <Select
+                variant="outlined"
+                sx={{ width: '43.5%', mt: 2 }}
+                label="Category"
                 size="small"
-                sx={{width:'90%', mt:2}} />
+                defaultValue='category'
+              >
+                {CATEGORY_CHOICES.map((label) => (
+                  <MenuItem key={label} value={label}>{label}</MenuItem>
+                ))}
+              </Select>
+            </Tooltip>
+            {/* Matter */}
+            <Autocomplete
+              sx={{ width: '90%', mt: 2 }}
+              size="small"
+              options={mattersOptions}
+              getOptionLabel={(option) => option.title} // Assuming the title property holds the case title
+              renderInput={(params) => <TextField {...params} label="Matter" variant="outlined" />}
+              onChange={(event, newValue) => {
+                if (newValue) {
+                  setNewEvent((prevState) => ({
+                    ...prevState,
+                    matter: newValue.id // Assuming the id property holds the case ID
+                  }));
+                }
+              }}
+            />
+            {/* Resource/Assigned */}
+            <TextField
+              size="small"
+              label="Assigned:"
+              value={currentUser ? currentUser.username : ''}
+              disabled
+              sx={{ mt: 2, width:'60%' }}
+            />
+            {/* Start date */}
+            <TextField
+              size="small"
+              label="Start Date"
+              defaultValue= "start"
+              type="datetime-local"
+              sx={{width: '43.5%', mt: 2 , mr:2  }}
+              InputLabelProps={{
+                shrink: true,
+              }}
+            />
+            {/* End date */}
+            <TextField
+              size="small"
+              label="End Date"
+              defaultValue="end"
+              type="datetime-local"
+              sx={{ width: '43.5%', mt: 2, mr:2}}
+              InputLabelProps={{
+                shrink: true,
+              }}
+            />
+            {/* Appointment ID */}
+            <TextField
+              size="small"
+              label="Appointment ID"
+              sx={{ width: '43%', mt: 2, mr:2 }}
+            />
+            {/* Appointment Status */}
+            <TextField
+              size="small"
+              label="Appointment Status"
+              sx={{ width: '43%', mt: 2 }}
+            />
+            {/* Address */}
+            <TextField
+              size="small"
+              label="Address"
+              sx={{ mt: 2 }}
+            />
+            {/* Task Checkbox */}
+            <FormControlLabel
+              sx={{ mt: 2, ml: 5 }}
+              control={<Checkbox />}
+              label="Task"
+            />
+            {/* Description */}
+            <TextField
+              multiline
+              rows={4}
+              label="Description"
+              size="small"
+              sx={{ width: '90%', mt: 2}}
+            />
+            {/* Save Button */}
+            <Box sx={{ mt: 2 }}>
+              <Button onClick={handleAddEvent} disableElevation variant="contained" size="small" sx={{ textTransform: 'none' }}> Save</Button>
             </Box>
-          <Box sx={{ mt: 2 }}>
-            <Button onClick={handleAddEvent} disableElevation variant="contained" size="small" sx={{ textTransform: 'none' }}> Save</Button>
-          </Box>
-        </DialogContent>
-      </Dialog>
+          </DialogContent>
+        </Dialog>
+
 
       {/* Event details dialog */}
       <Dialog open={Boolean(selectedEvent)} onClose={handleCloseEventDetails}>

@@ -2,7 +2,8 @@ from requests import Response
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
 from .models import Case, Client, Lawyer, Event
-from .serializers import CaseSerializer, ClientSerializer, LawyerSerializer, StaffReportSerializer, StaffReport, UserSerializer, EventSerializer
+from .serializers import CaseSerializer, ClientSerializer, LawyerSerializer, StaffReportSerializer, StaffReport, UserSerializer, EventSerializer, UserSerializer
+from rest_framework import permissions
 from django.http import JsonResponse
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -95,7 +96,14 @@ class LawyerRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = LawyerSerializer
 
 
-    
+ #user object   
+class CurrentUserView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        serializer = UserSerializer(request.user)
+        print(Response)
+        return Response(serializer.data)
 
 #Login Logout
     

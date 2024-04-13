@@ -14,6 +14,9 @@ from django.core.files.storage import FileSystemStorage
 from django.conf import settings
 
 
+###User
+
+
 ### Case Management
 def case_document_path(instance, filename):
     # Upload documents to a directory with the client's name

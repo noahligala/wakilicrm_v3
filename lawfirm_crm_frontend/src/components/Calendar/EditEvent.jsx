@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { TextField, Box, Fab, MenuItem, Select } from "@mui/material";
+import { TextField, Box, Fab, } from "@mui/material";
 import { ArrowDropDownIcon } from "@mui/x-date-pickers/icons";
 import Button from "@mui/material/Button/Button";
 import { useParams, Link } from 'react-router-dom';
@@ -11,10 +11,6 @@ import CloseIcon from '@mui/icons-material/Close';
 import { styled } from '@mui/material/styles';
 import Tooltip from '@mui/material/Tooltip';
 import Stack from '@mui/material/Stack';
-import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
-import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { DatePicker } from '@mui/x-date-pickers/DatePicker';
-import { TimePicker } from '@mui/x-date-pickers/TimePicker';
 
 const ProSpan = styled('span')({
   display: 'inline-block',
@@ -65,6 +61,9 @@ export default function EditEvent({ setTitle, title: initialTitle }) {
   const [categories, setCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState("");
   const [location, setLocation] = useState("");
+  const [appointmentID, setAppointmentID] = useState("");
+  const [appointmentStatus, setAppointmentStatus] = useState("");
+  const [address, setAddress] = useState("");
 
   const { eventId } = useParams();
 
@@ -81,6 +80,9 @@ export default function EditEvent({ setTitle, title: initialTitle }) {
         setStopTime(response.data.stopTime);
         setSelectedCategory(response.data.category); // Set selected category
         setLocation(response.data.location); // Set location
+        setAppointmentID(response.data.appointment_id); // Set appointment ID
+        setAppointmentStatus(response.data.appointment_status); // Set appointment status
+        setAddress(response.data.address); // Set address
       } catch (error) {
         console.error('Error fetching event:', error);
       }
@@ -138,6 +140,9 @@ export default function EditEvent({ setTitle, title: initialTitle }) {
         stopTime,
         category: selectedCategory,
         location,
+        appointment_id: appointmentID,
+        appointment_status: appointmentStatus,
+        address,
       });
       if (response.status === 200) {
         console.log('Event updated successfully');
@@ -156,7 +161,7 @@ export default function EditEvent({ setTitle, title: initialTitle }) {
           <Grid item xs={12} sx={{ display: "flex", flexDirection: "row", mt: 4 }}>
             <Tooltip title='Cancel'>
               <Link to="/v1/calendar">
-                <Fab disableElevation size="small" aria-label="close" sx={{  boxShadow: 'none', ml:-10 }}>
+                <Fab disableElevation size="small" aria-label="close" sx={{ boxShadow: 'none', ml: -10 }}>
                   <CloseIcon />
                 </Fab>
               </Link>
@@ -170,7 +175,7 @@ export default function EditEvent({ setTitle, title: initialTitle }) {
                 variant="standard"
               />
             </Grid>
-            <Grid item xs={6} sx={{ pl: 5, fontSize: "2rem" }}>
+            <Grid item xs={12} sx={{ pl: 5, fontSize: "2rem" }}>
               <Button
                 variant="contained"
                 disableElevation
@@ -192,74 +197,90 @@ export default function EditEvent({ setTitle, title: initialTitle }) {
               </Button>
             </Grid>
           </Grid>
-          <Grid item xs={6} sx={{ display: 'flex', flexDirection: 'row' }}>
+          <Grid item xs={12} sx={{ display: 'flex', flexDirection: 'row' }}>
+          {/* End date */}
+          <TextField
+              size="small"
+              label="Start Date"
+              defaultValue={event.startTime}
+              onChange={(date) => handleStopTimeChange(date.set('hour', stopTime.hour()).set('minute', stopTime.minute()))}
+              type="datetime-local"
+              sx={{ width: '50%', mt: 2, mr:2}}
+              InputLabelProps={{
+                shrink: true,
+              }}
+            />
 
-          {/* Test Date and Time Pickers */}
-          <LocalizationProvider dateAdapter={AdapterDayjs}>
-            <Box sx={{ pr: 2 }}>
-              {/* Set default value for start time */}
-              <TimePicker
-                label="Start"
-                defaultValue={startTime}
-                onChange={handleStartTimeChange}
-                slotProps={{ textField: { size: 'small'}, value:{fontSize:'0.05rem'}}}
-                sx={{width: '35%', mr:2}} />
-              <DatePicker
-                label="Start Date"
-                defaultValue={event.startDate}
-                onChange={(date) => handleStartTimeChange(date.set('hour', startTime.hour()).set('minute', startTime.minute()))}
-                formatDensity="dense" 
-                slotProps={{ textField: { size: 'small' } }}
-                sx={{width: '55%'}}  />
-            </Box>
-            <Box sx={{ pr: 2 }}>
-              {/* Set default value for stop time */}
-              <TimePicker
-                label="End"
-                defaultValue={stopTime}
-                onChange={handleStopTimeChange}
-                slotProps={{ textField: { size: 'small' } }}
-                sx={{width: '30%', mr:2}} />
-              <DatePicker
-                label="End Date"
-                defaultValue={event.endDate}
-                onChange={(date) => handleStopTimeChange(date.set('hour', stopTime.hour()).set('minute', stopTime.minute()))}
-                slotProps={{ textField: { size: 'small' } }}
-                sx={{width: '60%'}}  />
-            </Box>
-        </LocalizationProvider>
+            {/* End date */}
+            <TextField
+              size="small"
+              label="End Date"
+              defaultValue={event.Date}
+              onChange={(date) => handleStopTimeChange(date.set('hour', stopTime.hour()).set('minute', stopTime.minute()))}
+              type="datetime-local"
+              sx={{ width: '50%', mt: 2, mr:2}}
+              InputLabelProps={{
+                shrink: true,
+              }}
+            />
+            
           </Grid>
-          <Grid item xs={6}>
-            Second Grid
+          <Grid item xs={12}>
+            
+          <Grid item xs={12}>
+            <Box xs={12}>
+              <TextField
+                size="small"
+                label="Appointment ID"
+                defaultValue={appointmentID}
+                onChange={(e) => setAppointmentID(e.target.value)}
+                sx={{mt:2}}
+              />
+            </Box>
+            <Box xs={12}>
+              <TextField
+                size="small"
+                label="Appointment Status"
+                defaultValue={appointmentStatus}
+                onChange={(e) => setAppointmentStatus(e.target.value)}
+                sx={{mt:5}}
+              />
+            </Box>
           </Grid>
-          <Grid item xs={12} sx={{flexDirection:'row'}}>
+          <Grid item xs={12}>
+            <TextField
+              size="small"
+              label="Address"
+              defaultValue={address}
+              onChange={(e) => setAddress(e.target.value)}
+              multiline
+              rows={4}
+              sx={{mt:5}}
+            />
+            
+          </Grid>
+          </Grid>
+          <Grid item xs={12} sx={{ flexDirection: 'row' }}>
             <Box xs={4}>
               <FormControlLabel
                 control={<Checkbox checked={allDay} onChange={handleAllDayChange} />}
                 label="All Day"
               />
             </Box>
-            <Grid xs={4} sx={{mt:5}}>
-                  {/* Category Color */}
-                <TextField
-                  size="small"
-                  label="category"
-                  defaultValue={selectedCategory} />
-                </Grid>
-            {/* Location Input */}
-            <Grid xs={4} sx={{mt:5}}>
-            <TextField
-              label="Location"
-              value={location}
-              variant="outlined"
+          </Grid>
+          <Grid item xs={12}>
+            <Button
+              onClick={handleUpdateEvent}
+              variant="contained"
+              disableElevation
               size="small"
-              onChange={handleLocationChange}
-            />
-            </Grid>
+              sx={{ textTransform: 'none' }}
+            >
+              Save
+            </Button>
           </Grid>
         </Grid>
       )}
     </Grid>
-
   );
 }

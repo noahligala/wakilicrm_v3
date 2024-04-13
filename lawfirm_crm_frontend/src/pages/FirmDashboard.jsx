@@ -1,6 +1,6 @@
 import { Typography } from '@mui/material'
 import React from 'react'
-import { Grid, Box, Paper } from '@mui/material'
+import { Grid, Box, } from '@mui/material'
 import FirmDashboardChart from '../components/dashboardComponents/FirmDashboardChart'
 import Divider from '@mui/material/Divider/Divider'
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';

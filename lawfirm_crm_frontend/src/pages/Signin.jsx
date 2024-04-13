@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, createContext, useContext } from 'react';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import axios from 'axios';
+
 import Avatar from '@mui/material/Avatar';
 import Button from '@mui/material/Button';
 import CssBaseline from '@mui/material/CssBaseline';
@@ -14,12 +15,16 @@ import Typography from '@mui/material/Typography';
 import Container from '@mui/material/Container';
 import Alert from '@mui/material/Alert';
 
+// Define a context to hold the user object
+const UserContext = createContext();
+
+export const useUser = () => {
+  return useContext(UserContext);
+};
+
 const validationSchema = Yup.object({
-  emailOrUsername: Yup.string().matches(
-    /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$|^[a-zA-Z0-9_-]+$/,
-    'Invalid email or username'
-  ).required('Required'),
-  password: Yup.string().min(8, 'Password should be minimum 8 characters').required('Required'),
+  emailOrUsername: Yup.string().required('Required'),
+  password: Yup.string().required('Required'),
 });
 
 export default function SignIn({ onLogin, onRedirect }) {
@@ -27,6 +32,9 @@ export default function SignIn({ onLogin, onRedirect }) {
   const [open, setOpen] = useState(false);
   const [severity, setSeverity] = useState('error');
   const [redirect, setRedirect] = useState(false); // State for redirection
+
+  // State to hold the user object
+  const [user, setUser] = useState(null);
 
   const formik = useFormik({
     initialValues: {
@@ -52,14 +60,30 @@ export default function SignIn({ onLogin, onRedirect }) {
         const response = await axios.post('http://localhost:8000/api/token/', loginData);
 
         if (response.status === 200) {
-          // Set state to trigger redirection
-          setRedirect(true);
-          setMessage('Sign in successful!');
-          setSeverity('success');
-          setOpen(true);
-          // Call onLogin and onRedirect functions upon successful login
-          onLogin(response.data);
-          onRedirect();
+          const accessToken = response.data.access;
+          const config = {
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+            },
+          };
+
+          // Fetch user data using the access token
+          const userDataResponse = await axios.get('http://localhost:8000/api/current-user/', config);
+
+          if (userDataResponse.status === 200) {
+            // Save user object to state
+            setUser(userDataResponse.data);
+            // Log the user object
+            
+
+            // Call onLogin and onRedirect functions upon successful login
+            onLogin(userDataResponse.data);
+            onRedirect();
+          } else {
+            setMessage('Failed to fetch user data');
+            setSeverity('error');
+            setOpen(true);
+          }
         } else {
           setMessage('Sign in failed!');
           setSeverity('error');
@@ -142,9 +166,9 @@ export default function SignIn({ onLogin, onRedirect }) {
             {message}
           </Alert>
           <Grid container>
-              <Link align='center' href="/api/user/credentials/v1/reset" variant="body2">
-                Forgot password?
-              </Link>
+            <Link align='center' href="/api/user/credentials/v1/reset" variant="body2">
+              Forgot password?
+            </Link>
           </Grid>
         </Box>
       </Box>
