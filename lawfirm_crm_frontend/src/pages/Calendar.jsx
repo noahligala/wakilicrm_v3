@@ -23,8 +23,8 @@ export default function Calendar({ setTitle }) {
     <React.Fragment>
      <Box sx={{flexGrow: 1, ml: -5,mt:4, flexDirection: "row"}}>
         <Grid container spacing={3}>
-            <Grid xs={10}>
-                <Grid item xs={10} sx={{ height: ''}}>
+            <Grid xs={9}>
+                <Grid item xs={8} sx={{ height: ''}}>
                   <Paper sx={{ p: 2, display: "flex", flexDirection: "column", flexWrap: "nowrap" }}>
                     <Box>
                       <div style={{ }}>
